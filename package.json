@@ -1,0 +1,24 @@
+{
+    "main": "lib/binding.js",
+    "scripts": {
+        "pretest": "tsc",
+        "build": "node-gyp rebuild && tsc",
+        "clean": "rm -rf dist build && node-gyp clean",
+        "test": "node --napi-modules ./test/test_binding.js"
+    },
+    "gypfile": true,
+    "name": "mysql-binlog",
+    "version": "0.1.0",
+    "description": "MySQL binlog parser",
+    "dependencies": {
+        "debug": "^4",
+        "node-addon-api": "^5"
+    },
+    "devDependencies": {
+        "@types/debug": "^4",
+        "@types/node": "^18.7.9",
+        "typescript": "^4.7.4"
+    },
+    "author": "Maurus Cuelenaere",
+    "license": "MIT"
+}
