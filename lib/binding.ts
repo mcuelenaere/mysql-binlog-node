@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events';
 import { debug } from 'debug';
-const native = require('../build/Release/mysql-binlog-native');
+import * as path from 'path';
+const native = require('node-gyp-build')(path.join(__dirname, '..'));
 
 const debugChannel = debug('mysql_binlog');
 native.setLogger((message: string) => {
