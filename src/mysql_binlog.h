@@ -4,8 +4,8 @@
 #include <napi.h>
 #include "mysql-binlog-go.h"
 
-void CallJs(Napi::Env, Napi::Function, nullptr_t*, char*);
-using TSF = Napi::TypedThreadSafeFunction<nullptr_t, char, CallJs>;
+void CallJs(Napi::Env, Napi::Function, std::nullptr_t*, char*);
+using TSF = Napi::TypedThreadSafeFunction<std::nullptr_t, char, CallJs>;
 
 class MysqlBinlog : public Napi::ObjectWrap<MysqlBinlog>
 {

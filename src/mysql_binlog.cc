@@ -55,7 +55,7 @@ MysqlBinlog::MysqlBinlog(const Napi::CallbackInfo& info) : ObjectWrap(info) {
         MAX_TSFN_QUEUE_SIZE,
         1,
         nullptr,
-        [](Napi::Env, void*, nullptr_t*) {
+        [](Napi::Env, void*, std::nullptr_t*) {
             // do nothing
         }
     );
@@ -125,7 +125,7 @@ void MysqlBinlog::OnEvent(const char* event) {
     }
 }
 
-void CallJs(Napi::Env env, Napi::Function callback, nullptr_t* context, char* event) {
+void CallJs(Napi::Env env, Napi::Function callback, std::nullptr_t* context, char* event) {
     if (env != nullptr && callback != nullptr && event != nullptr) {
         callback.Call(env.Null(), {Napi::String::New(env, event)});
     }
