@@ -97,6 +97,7 @@ MysqlBinlog::MysqlBinlog(const Napi::CallbackInfo& info) : ObjectWrap(info) {
         } else {
             Napi::Error::New(env, "unknown error in Go land occurred").ThrowAsJavaScriptException();
         }
+        this->callback.Release();
         return;
     }
 }
