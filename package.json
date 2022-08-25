@@ -1,9 +1,10 @@
 {
-    "main": "lib/binding.js",
+    "main": "dist/binding.js",
+    "types": "dist/binding.d.ts",
     "scripts": {
         "pretest": "tsc",
         "test": "node --napi-modules ./test/test_binding.js",
-        "build": "prebuildify --napi",
+        "build": "prebuildify --napi --strip",
         "clean": "rm -rf dist build prebuild",
         "install": "node-gyp-build"
     },
@@ -22,6 +23,10 @@
         "prebuildify": "^5.0.1",
         "typescript": "^4.7.4"
     },
+    "files": [
+        "dist/*",
+        "prebuilds/*"
+    ],
     "author": "Maurus Cuelenaere",
     "license": "MIT",
     "repository": {

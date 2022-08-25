@@ -13,7 +13,7 @@
                     '<(INTERMEDIATE_DIR)/mysql-binlog-go.<(lib_suffix)',
                     '<(INTERMEDIATE_DIR)/mysql-binlog-go.h',
                 ],
-                'action': ['go', 'build', '-buildmode', 'c-archive', '-o', '<(INTERMEDIATE_DIR)/mysql-binlog-go.<(lib_suffix)']
+                'action': ['node', 'build.js', '<(INTERMEDIATE_DIR)/mysql-binlog-go.<(lib_suffix)']
             }
         ],
         'copies': [
@@ -26,7 +26,7 @@
   ],
   'conditions': [
     ['OS=="mac"', {'variables': {'lib_suffix': 'o'}}],
-    ['OS=="win"', {'variables': {'lib_suffix': 'a'}}],
+    ['OS=="win"', {'variables': {'lib_suffix': 'lib'}}],
     ['OS=="linux"', {'variables': {'lib_suffix': 'a'}}],
   ]
 }
