@@ -65,7 +65,7 @@ func sendMsg(msg any) {
 
 	_, err = os.Stdout.Write(serializedMsg)
 	if err != nil {
-		log.Printf("could not send error message to stdout: %v", err)
+		log.Fatalf("could not send error message to stdout: %v", err)
 	}
 }
 
