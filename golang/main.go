@@ -76,45 +76,47 @@ func sendError(err error) {
 	})
 }
 
-func main() {
-	log.SetOutput(os.Stderr)
+func parseMessages(c chan<- any) {
 	reader := bufio.NewReader(os.Stdin)
 
-	messages := make(chan any)
-	go func(c chan<- any) {
-		for {
-			line, err := reader.ReadString('\n')
-			if err != nil {
-				if err == io.EOF {
-					break
-				}
-
-				log.Printf("received unexpected err when reading from stdin: %v", err)
+	for {
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
 				break
 			}
 
-			var unkMsg UnknownMessage
-			err = json.Unmarshal([]byte(line), &unkMsg)
+			log.Printf("received unexpected err when reading from stdin: %v", err)
+			break
+		}
+
+		var unkMsg UnknownMessage
+		err = json.Unmarshal([]byte(line), &unkMsg)
+		if err != nil {
+			sendError(err)
+			continue
+		}
+		switch unkMsg.Type {
+		case "connect":
+			var connectMsg ConnectMessage
+			err = json.Unmarshal([]byte(line), &connectMsg)
 			if err != nil {
 				sendError(err)
 				continue
 			}
-			switch unkMsg.Type {
-			case "connect":
-				var connectMsg ConnectMessage
-				err = json.Unmarshal([]byte(line), &connectMsg)
-				if err != nil {
-					sendError(err)
-					continue
-				}
 
-				c <- connectMsg
-			default:
-				sendError(errors.New("unknown message type"))
-			}
-
+			c <- connectMsg
+		default:
+			sendError(errors.New("unknown message type"))
 		}
-	}(messages)
+	}
+}
+
+func main() {
+	log.SetOutput(os.Stderr)
+
+	messages := make(chan any)
+	go parseMessages(messages)
 
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGINT)
