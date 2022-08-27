@@ -7,9 +7,10 @@
         "build:js": "tsc",
         "build:golang": "node scripts/build_golang.js"
     },
-    "name": "mysql-binlog",
+    "name": "go-mysql-js",
     "version": "0.2.0",
-    "description": "MySQL binlog parser",
+    "description": "MySQL connector & binlog parser",
+    "keywords": ["mysql", "binlog"],
     "dependencies": {
         "debug": "^4"
     },
