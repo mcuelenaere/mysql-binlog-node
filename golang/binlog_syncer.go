@@ -61,12 +61,28 @@ func (eh *canalEventHandler) String() string {
 	return "canalEventHandler"
 }
 
+type channelLogHandler struct {
+	c chan<- string
+}
+
+func (h *channelLogHandler) Write(b []byte) (n int, err error) {
+	h.c <- string(b)
+	return len(b), nil
+}
+
+func (h *channelLogHandler) Close() error {
+	return nil
+}
+
 type MysqlBinlogSyncer struct {
-	canal  *canal.Canal
-	events chan MysqlBinlogChangeEvent
+	canal         *canal.Canal
+	binlogEvents  chan MysqlBinlogChangeEvent
+	loggingEvents chan string
 }
 
 func NewSyncer(config MysqlBinlogConfig) (*MysqlBinlogSyncer, error) {
+	loggingEvents := make(chan string, 100)
+
 	canalCfg := canal.NewDefaultConfig()
 	canalCfg.Addr = fmt.Sprintf("%s:%d", config.Hostname, config.Port)
 	canalCfg.User = config.Username
@@ -75,18 +91,17 @@ func NewSyncer(config MysqlBinlogConfig) (*MysqlBinlogSyncer, error) {
 	canalCfg.IncludeTableRegex = config.TableRegexes
 	canalCfg.ParseTime = true
 	canalCfg.Dump = canal.DumpConfig{}
-	logHandler, _ := logger.NewNullHandler()
-	canalCfg.Logger = logger.NewDefault(logHandler)
+	canalCfg.Logger = logger.New(&channelLogHandler{c: loggingEvents}, logger.Llevel|logger.Lfile)
 
 	c, err := canal.NewCanal(canalCfg)
 	if err != nil {
 		return nil, err
 	}
-	events := make(chan MysqlBinlogChangeEvent)
+	binlogEvents := make(chan MysqlBinlogChangeEvent)
 
 	eventHandler := &canalEventHandler{
 		canal:  c,
-		events: events,
+		events: binlogEvents,
 	}
 	c.SetEventHandler(eventHandler)
 
@@ -109,14 +124,23 @@ func NewSyncer(config MysqlBinlogConfig) (*MysqlBinlogSyncer, error) {
 		}
 	}()
 
-	return &MysqlBinlogSyncer{canal: c, events: events}, nil
+	return &MysqlBinlogSyncer{
+		canal:         c,
+		binlogEvents:  binlogEvents,
+		loggingEvents: loggingEvents,
+	}, nil
 }
 
 func (s *MysqlBinlogSyncer) ChangeEvents() <-chan MysqlBinlogChangeEvent {
-	return s.events
+	return s.binlogEvents
+}
+
+func (s *MysqlBinlogSyncer) LogEvents() <-chan string {
+	return s.loggingEvents
 }
 
 func (s *MysqlBinlogSyncer) Close() {
 	s.canal.Close()
-	close(s.events)
+	close(s.binlogEvents)
+	close(s.loggingEvents)
 }

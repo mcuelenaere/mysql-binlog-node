@@ -71,6 +71,9 @@ class MysqlBinlog extends EventEmitter {
                 case 'binlog_change':
                     this.emit('event', msg.event);
                     break;
+                case 'log':
+                    debugChannel(msg.message.trimEnd());
+                    break;
                 default:
                     debugChannel('received unexpected message on stdout: %o', msg);
                     this.emit('error', new Error('received unexpected message'));

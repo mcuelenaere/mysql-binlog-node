@@ -40,6 +40,10 @@ type BinlogChangeMessage struct {
 	Type  string                 `json:"type"`
 	Event MysqlBinlogChangeEvent `json:"event"`
 }
+type LogMessage struct {
+	Type    string `json:"type"`
+	Message string `json:"message"`
+}
 type ErrorMessage struct {
 	Type  string `json:"type"`
 	Error string `json:"error"`
@@ -116,6 +120,7 @@ func main() {
 
 	shouldLoop := true
 	var binlogChanges <-chan MysqlBinlogChangeEvent
+	var logEvents <-chan string
 	var syncer *MysqlBinlogSyncer
 	for shouldLoop {
 		var err error
@@ -131,6 +136,7 @@ func main() {
 					})
 				} else {
 					binlogChanges = syncer.ChangeEvents()
+					logEvents = syncer.LogEvents()
 					sendMsg(ConnectOkMessage{
 						Type: "connect_ok",
 					})
@@ -140,6 +146,11 @@ func main() {
 			sendMsg(BinlogChangeMessage{
 				Type:  "binlog_change",
 				Event: event,
+			})
+		case event := <-logEvents:
+			sendMsg(LogMessage{
+				Type:    "log",
+				Message: event,
 			})
 		case <-signals:
 			err = os.Stdin.Close()
