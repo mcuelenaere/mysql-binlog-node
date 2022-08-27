@@ -131,6 +131,11 @@ func main() {
 			case ConnectMessage:
 				connectTimer.Stop()
 
+				if syncer != nil {
+					syncer.Close()
+					syncer = nil
+				}
+
 				var err error
 				syncer, err = NewSyncer(msg.Config)
 				if err != nil {
