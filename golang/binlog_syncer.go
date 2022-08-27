@@ -5,16 +5,31 @@ import (
 	"github.com/go-mysql-org/go-mysql/canal"
 	"github.com/go-mysql-org/go-mysql/mysql"
 	"github.com/go-mysql-org/go-mysql/replication"
-	"github.com/go-mysql-org/go-mysql/schema"
 	logger "github.com/siddontang/go-log/log"
 	"log"
 )
 
+type MysqlBinlogPosition struct {
+	Name     string `json:"name"`
+	Position uint32 `json:"position"`
+}
+
+type MysqlBinlogRowUpdate struct {
+	Old map[string]any `json:"old"`
+	New map[string]any `json:"new"`
+}
+
+type MysqlBinlogTable struct {
+	Schema string `json:"schema"`
+	Name   string `json:"name"`
+}
+
 type MysqlBinlogChangeEvent struct {
-	BinlogPosition mysql.Position
-	Table          *schema.Table
-	Action         string
-	Rows           [][]interface{}
+	BinlogPosition MysqlBinlogPosition   `json:"binlogPosition"`
+	Table          MysqlBinlogTable      `json:"table"`
+	Insert         map[string]any        `json:"insert,omitempty"`
+	Update         *MysqlBinlogRowUpdate `json:"update,omitempty"`
+	Delete         map[string]any        `json:"delete,omitempty"`
 }
 
 type canalEventHandler struct {
@@ -35,12 +50,37 @@ func (eh *canalEventHandler) OnDDL(_ mysql.Position, _ *replication.QueryEvent) 
 }
 
 func (eh *canalEventHandler) OnRow(event *canal.RowsEvent) error {
-	eh.events <- MysqlBinlogChangeEvent{
-		BinlogPosition: eh.canal.SyncedPosition(),
-		Table:          event.Table,
-		Action:         event.Action,
-		Rows:           event.Rows,
+	parseRow := func(row []any) map[string]any {
+		parsedRow := make(map[string]any)
+		for idx, column := range event.Table.Columns {
+			parsedRow[column.Name] = row[idx]
+		}
+		return parsedRow
 	}
+
+	binlogPosition := eh.canal.SyncedPosition()
+	changeEvent := MysqlBinlogChangeEvent{
+		BinlogPosition: MysqlBinlogPosition{
+			Name:     binlogPosition.Name,
+			Position: binlogPosition.Pos,
+		},
+		Table: MysqlBinlogTable{
+			Schema: event.Table.Schema,
+			Name:   event.Table.Name,
+		},
+	}
+	switch event.Action {
+	case canal.InsertAction:
+		changeEvent.Insert = parseRow(event.Rows[0])
+	case canal.UpdateAction:
+		changeEvent.Update = &MysqlBinlogRowUpdate{
+			Old: parseRow(event.Rows[0]),
+			New: parseRow(event.Rows[1]),
+		}
+	case canal.DeleteAction:
+		changeEvent.Delete = parseRow(event.Rows[0])
+	}
+	eh.events <- changeEvent
 
 	return nil
 }
