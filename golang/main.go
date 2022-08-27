@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
 )
 
 type MysqlBinlogConfig struct {
@@ -119,15 +120,18 @@ func main() {
 	signal.Notify(signals, syscall.SIGINT)
 
 	shouldLoop := true
+	connectTimer := time.NewTimer(10 * time.Second)
 	var binlogChanges <-chan MysqlBinlogChangeEvent
 	var logEvents <-chan string
 	var syncer *MysqlBinlogSyncer
 	for shouldLoop {
-		var err error
 		select {
 		case msg := <-messages:
 			switch msg := msg.(type) {
 			case ConnectMessage:
+				connectTimer.Stop()
+
+				var err error
 				syncer, err = NewSyncer(msg.Config)
 				if err != nil {
 					sendMsg(ConnectErrorMessage{
@@ -152,17 +156,23 @@ func main() {
 				Type:    "log",
 				Message: event,
 			})
+		case <-connectTimer.C:
+			if syncer == nil {
+				sendError(errors.New("timeout was hit while waiting for connect message"))
+				shouldLoop = false
+			}
 		case <-signals:
-			err = os.Stdin.Close()
-			if err != nil {
-				sendError(err)
-			}
-			close(messages)
-			if syncer != nil {
-				syncer.Close()
-				syncer = nil
-			}
 			shouldLoop = false
 		}
+	}
+
+	err := os.Stdin.Close()
+	if err != nil {
+		sendError(err)
+	}
+	close(messages)
+	if syncer != nil {
+		syncer.Close()
+		syncer = nil
 	}
 }
