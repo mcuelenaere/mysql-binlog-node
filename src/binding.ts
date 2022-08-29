@@ -22,6 +22,23 @@ export interface Config {
     binlogPosition?: BinlogPosition;
 }
 
+export interface BinlogEvent {
+    binlogPosition: {
+        name: string;
+        position: number;
+    }
+    table: {
+        schema: string;
+        name: string;
+    }
+    insert?: Record<string, any>;
+    update?: {
+        old: Record<string, any>;
+        new: Record<string, any>;
+    };
+    delete?: Record<string, any>;
+}
+
 function _discoverGoBinary() {
     let suffix = '';
     if (os.platform() === 'win32') {
@@ -141,6 +158,14 @@ class MysqlBinlog extends EventEmitter {
                 resolve(undefined);
             });
         });
+    }
+
+    public on(name: 'event', listener: (event: BinlogEvent) => void): this;
+    public on(name: 'error', listener: (err: Error) => void): this;
+    public on(name: 'close', listener: () => void): this;
+    public on(name: 'beforeClose', listener: () => void): this;
+    public on(eventName: string | symbol, listener: (...args: any[]) => void): this {
+        return super.on(eventName, listener);
     }
 }
 
