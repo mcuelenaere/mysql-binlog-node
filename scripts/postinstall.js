@@ -27,6 +27,8 @@ for (const entry of fs.readdirSync(PREBUILDS_PATH, { withFileTypes: true })) {
     if (entry.name !== nativeBinaryFilename) {
         fs.unlinkSync(path.join(PREBUILDS_PATH, entry.name));
     } else {
+        // ensure the binary is executable
+        fs.chmodSync(path.join(PREBUILDS_PATH, entry.name), 0o755);
         nativeBinaryFound = true;
     }
 }
