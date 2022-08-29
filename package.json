@@ -5,7 +5,8 @@
         "test": "node ./test/test_binding.js",
         "build": "npm run build:golang && npm run build:js",
         "build:js": "tsc",
-        "build:golang": "node scripts/build_golang.js"
+        "build:golang": "node scripts/build_golang.js",
+        "postinstall": "node scripts/postinstall.js"
     },
     "name": "go-mysql-js",
     "version": "0.2.1",
@@ -21,7 +22,8 @@
     },
     "files": [
         "dist/*",
-        "prebuilds/*"
+        "prebuilds/*",
+        "scripts/postinstall.js"
     ],
     "author": "Maurus Cuelenaere",
     "license": "MIT",
