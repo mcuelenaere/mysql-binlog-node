@@ -102,7 +102,7 @@ class MysqlBinlog extends EventEmitter {
         this._process.stdin!.write(JSON.stringify(message) + '\n');
     }
 
-    public static create(config: Config) {
+    public static create(config: Config): Promise<MysqlBinlog> {
         return new Promise((resolve, reject) => {
             const process = spawn(_discoverGoBinary(), {
                 stdio: 'pipe',
@@ -124,7 +124,7 @@ class MysqlBinlog extends EventEmitter {
         });
     }
 
-    public async close() {
+    public async close(): Promise<void> {
         if (this._process.exitCode !== null) {
             // do not try to kill the process multiple times
             return;
