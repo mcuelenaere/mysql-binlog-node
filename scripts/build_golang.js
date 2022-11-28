@@ -11,17 +11,17 @@ function run(...args) {
 }
 
 const combinations = [
-    ['linux', 'amd64', 'linux-x64'],
-//    ['linux', 'arm', 'linux-arm'], // 3rd-party library does not support 32-bit
-    ['linux', 'arm64', 'linux-arm64'],
-    ['darwin', 'amd64', 'darwin-x64'],
-    ['darwin', 'arm64', 'darwin-arm64'],
-    ['windows', 'amd64', 'win32-x64'],
-//    ['windows', '386', 'win32-x86'], // 3rd-party library does not support 32-bit
-//    ['windows', 'arm64', 'win32-arm64'], // UPX does not support this platform
+    ['linux', 'amd64', 'linux-x64', true],
+//    ['linux', 'arm', 'linux-arm', true], // 3rd-party library does not support 32-bit
+    ['linux', 'arm64', 'linux-arm64', true],
+    ['darwin', 'amd64', 'darwin-x64', true],
+    ['darwin', 'arm64', 'darwin-arm64', false],
+    ['windows', 'amd64', 'win32-x64', true],
+//    ['windows', '386', 'win32-x86', true], // 3rd-party library does not support 32-bit
+//    ['windows', 'arm64', 'win32-arm64', true], // UPX does not support this platform
 ];
 
-for (const [goOs, goArch, nodePlatformArch] of combinations) {
+for (const [goOs, goArch, nodePlatformArch, enableUpxCompression] of combinations) {
     console.log(`Building ${nodePlatformArch}...`);
     let outputFile = path.join(__dirname, '..', 'prebuilds', nodePlatformArch);
     if (nodePlatformArch.startsWith('win32')) {
@@ -39,5 +39,7 @@ for (const [goOs, goArch, nodePlatformArch] of combinations) {
             stdio: 'inherit',
         }
     );
-    run('upx', [outputFile]);
+    if (enableUpxCompression) {
+        run('upx', [outputFile]);
+    }
 }
