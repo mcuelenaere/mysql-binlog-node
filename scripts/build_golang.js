@@ -19,7 +19,7 @@ const combinations = [
     ['darwin', 'arm64', 'darwin-arm64', false],
     ['windows', 'amd64', 'win32-x64', true],
 //    ['windows', '386', 'win32-ia32', true], // 3rd-party library does not support 32-bit
-//    ['windows', 'arm64', 'win32-arm64', true], // UPX does not support this platform
+    ['windows', 'arm64', 'win32-arm64', false],
 ];
 
 for (const [goOs, goArch, nodePlatformArch, enableUpxCompression] of combinations) {
