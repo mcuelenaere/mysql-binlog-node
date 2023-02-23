@@ -2,7 +2,10 @@ module mysql-binlog
 
 go 1.19
 
-require github.com/go-mysql-org/go-mysql v1.6.0
+require (
+	github.com/go-mysql-org/go-mysql v1.6.0
+	github.com/siddontang/go-log v0.0.0-20180807004314-8d05993dda07
+)
 
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
@@ -12,10 +15,9 @@ require (
 	github.com/pingcap/parser v0.0.0-20210415081931-48e7f467fd74 // indirect
 	github.com/shopspring/decimal v0.0.0-20180709203117-cd690d0c9e24 // indirect
 	github.com/siddontang/go v0.0.0-20180604090527-bdc77568d726 // indirect
-	github.com/siddontang/go-log v0.0.0-20180807004314-8d05993dda07 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.16.0 // indirect
-	golang.org/x/text v0.3.6 // indirect
+	golang.org/x/text v0.3.8 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 )
