@@ -5,6 +5,7 @@ import (
 	"github.com/go-mysql-org/go-mysql/canal"
 	"github.com/go-mysql-org/go-mysql/mysql"
 	"github.com/go-mysql-org/go-mysql/replication"
+	"github.com/go-mysql-org/go-mysql/schema"
 	logger "github.com/siddontang/go-log/log"
 	"log"
 )
@@ -53,6 +54,14 @@ func (eh *canalEventHandler) OnRow(event *canal.RowsEvent) error {
 	parseRow := func(row []any) map[string]any {
 		parsedRow := make(map[string]any)
 		for idx, column := range event.Table.Columns {
+			if column.Type == schema.TYPE_ENUM && column.EnumValues != nil {
+				enumValue, ok := row[idx].(int64)
+				if ok && int(enumValue) < len(column.EnumValues) {
+					parsedRow[column.Name] = column.EnumValues[enumValue-1]
+					continue
+				}
+			}
+
 			parsedRow[column.Name] = row[idx]
 		}
 		return parsedRow
