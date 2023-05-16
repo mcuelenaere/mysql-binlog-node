@@ -9,7 +9,7 @@
         "postinstall": "node scripts/postinstall.js"
     },
     "name": "go-mysql-js",
-    "version": "0.2.6",
+    "version": "0.3.0",
     "description": "MySQL connector & binlog parser",
     "keywords": ["mysql", "binlog"],
     "dependencies": {
