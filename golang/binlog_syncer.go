@@ -36,6 +36,7 @@ type MysqlBinlogChangeEvent struct {
 type canalEventHandler struct {
 	canal  *canal.Canal
 	events chan<- MysqlBinlogChangeEvent
+	errors chan<- error
 }
 
 func (eh *canalEventHandler) OnRotate(_ *replication.RotateEvent) error {
@@ -50,44 +51,95 @@ func (eh *canalEventHandler) OnDDL(_ mysql.Position, _ *replication.QueryEvent) 
 	return nil
 }
 
+type ErrorWithBinlogPosition struct {
+	message        string
+	BinlogPosition MysqlBinlogPosition
+}
+
+func (e ErrorWithBinlogPosition) Error() string {
+	return e.message
+}
+
+func NewErrorWithBinlogPosition(message string, binlogPosition MysqlBinlogPosition) ErrorWithBinlogPosition {
+	return ErrorWithBinlogPosition{
+		message:        message,
+		BinlogPosition: binlogPosition,
+	}
+}
+
 func (eh *canalEventHandler) OnRow(event *canal.RowsEvent) error {
-	parseRow := func(row []any) map[string]any {
+	binlogPosition := eh.canal.SyncedPosition()
+	mysqlBinLogPosition := MysqlBinlogPosition{
+		Name:     binlogPosition.Name,
+		Position: binlogPosition.Pos,
+	}
+
+	parseRow := func(row []any) (map[string]any, error) {
 		parsedRow := make(map[string]any)
 		for idx, column := range event.Table.Columns {
-			if column.Type == schema.TYPE_ENUM && column.EnumValues != nil {
-				enumValue, ok := row[idx].(int64)
-				if ok && int(enumValue) < len(column.EnumValues) {
-					parsedRow[column.Name] = column.EnumValues[enumValue-1]
-					continue
+			if column.Type == schema.TYPE_ENUM || column.Type == schema.TYPE_SET {
+				if column.EnumValues == nil {
+					return nil, NewErrorWithBinlogPosition("Received binlog event for enum or set, but could not find the corresponding string values", mysqlBinLogPosition)
 				}
+
+				enumValue, ok := row[idx].(int64)
+				if !ok {
+					return nil, NewErrorWithBinlogPosition("Received binlog event for enum or set, but could not parse the value as int64", mysqlBinLogPosition)
+				}
+
+				if int(enumValue) >= len(column.EnumValues) {
+					return nil, NewErrorWithBinlogPosition("Received binlog event for enum or set, but the int value is out of range", mysqlBinLogPosition)
+				}
+
+				parsedRow[column.Name] = column.EnumValues[enumValue-1]
+				continue
 			}
 
 			parsedRow[column.Name] = row[idx]
 		}
-		return parsedRow
+		return parsedRow, nil
 	}
 
-	binlogPosition := eh.canal.SyncedPosition()
 	changeEvent := MysqlBinlogChangeEvent{
-		BinlogPosition: MysqlBinlogPosition{
-			Name:     binlogPosition.Name,
-			Position: binlogPosition.Pos,
-		},
+		BinlogPosition: mysqlBinLogPosition,
 		Table: MysqlBinlogTable{
 			Schema: event.Table.Schema,
 			Name:   event.Table.Name,
 		},
 	}
+
 	switch event.Action {
 	case canal.InsertAction:
-		changeEvent.Insert = parseRow(event.Rows[0])
+		var err error
+		changeEvent.Insert, err = parseRow(event.Rows[0])
+		if err != nil {
+			eh.errors <- err
+			return nil
+		}
 	case canal.UpdateAction:
+		oldRow, err := parseRow(event.Rows[0])
+		if err != nil {
+			eh.errors <- err
+			return nil
+		}
+
+		newRow, err := parseRow(event.Rows[1])
+		if err != nil {
+			eh.errors <- err
+			return nil
+		}
+
 		changeEvent.Update = &MysqlBinlogRowUpdate{
-			Old: parseRow(event.Rows[0]),
-			New: parseRow(event.Rows[1]),
+			Old: oldRow,
+			New: newRow,
 		}
 	case canal.DeleteAction:
-		changeEvent.Delete = parseRow(event.Rows[0])
+		var err error
+		changeEvent.Delete, err = parseRow(event.Rows[0])
+		if err != nil {
+			eh.errors <- err
+			return nil
+		}
 	}
 	eh.events <- changeEvent
 
@@ -126,6 +178,7 @@ func (h *channelLogHandler) Close() error {
 type MysqlBinlogSyncer struct {
 	canal         *canal.Canal
 	binlogEvents  chan MysqlBinlogChangeEvent
+	binlogErrors  chan error
 	loggingEvents chan string
 }
 
@@ -147,9 +200,11 @@ func NewSyncer(config MysqlBinlogConfig) (*MysqlBinlogSyncer, error) {
 		return nil, err
 	}
 	binlogEvents := make(chan MysqlBinlogChangeEvent)
+	binlogErrors := make(chan error)
 
 	eventHandler := &canalEventHandler{
 		canal:  c,
+		errors: binlogErrors,
 		events: binlogEvents,
 	}
 	c.SetEventHandler(eventHandler)
@@ -176,12 +231,17 @@ func NewSyncer(config MysqlBinlogConfig) (*MysqlBinlogSyncer, error) {
 	return &MysqlBinlogSyncer{
 		canal:         c,
 		binlogEvents:  binlogEvents,
+		binlogErrors:  binlogErrors,
 		loggingEvents: loggingEvents,
 	}, nil
 }
 
 func (s *MysqlBinlogSyncer) ChangeEvents() <-chan MysqlBinlogChangeEvent {
 	return s.binlogEvents
+}
+
+func (s *MysqlBinlogSyncer) Errors() <-chan error {
+	return s.binlogErrors
 }
 
 func (s *MysqlBinlogSyncer) LogEvents() <-chan string {

@@ -46,8 +46,9 @@ type LogMessage struct {
 	Message string `json:"message"`
 }
 type ErrorMessage struct {
-	Type  string `json:"type"`
-	Error string `json:"error"`
+	Type           string               `json:"type"`
+	Error          string               `json:"error"`
+	BinlogPosition *MysqlBinlogPosition `json:"binlogPosition,omitempty"`
 }
 
 var sendMutex sync.Mutex
@@ -70,10 +71,18 @@ func sendMsg(msg any) {
 }
 
 func sendError(err error) {
-	sendMsg(ErrorMessage{
-		Type:  "error",
-		Error: err.Error(),
-	})
+	if errWithBinLog, ok := err.(ErrorWithBinlogPosition); ok {
+		sendMsg(ErrorMessage{
+			Type:           "error",
+			Error:          err.Error(),
+			BinlogPosition: &errWithBinLog.BinlogPosition,
+		})
+	} else {
+		sendMsg(ErrorMessage{
+			Type:  "error",
+			Error: err.Error(),
+		})
+	}
 }
 
 func parseMessages(c chan<- any) {
@@ -124,6 +133,7 @@ func main() {
 	shouldLoop := true
 	connectTimer := time.NewTimer(10 * time.Second)
 	var binlogChanges <-chan MysqlBinlogChangeEvent
+	var binlogErrors <-chan error
 	var logEvents <-chan string
 	var syncer *MysqlBinlogSyncer
 	for shouldLoop {
@@ -147,6 +157,7 @@ func main() {
 					})
 				} else {
 					binlogChanges = syncer.ChangeEvents()
+					binlogErrors = syncer.Errors()
 					logEvents = syncer.LogEvents()
 					sendMsg(ConnectOkMessage{
 						Type: "connect_ok",
@@ -158,6 +169,8 @@ func main() {
 				Type:  "binlog_change",
 				Event: event,
 			})
+		case err := <-binlogErrors:
+			sendError(err)
 		case event := <-logEvents:
 			sendMsg(LogMessage{
 				Type:    "log",

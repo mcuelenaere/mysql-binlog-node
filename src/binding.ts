@@ -39,6 +39,16 @@ export interface BinlogEvent {
     delete?: Record<string, any>;
 }
 
+export class ErrorWithBinLogPosition extends Error {
+    public readonly binlogPosition: BinlogPosition;
+
+    constructor(message: string, binlogPosition: BinlogPosition) {
+        super(message);
+        this.name = this.constructor.name;
+        this.binlogPosition = binlogPosition;
+    }
+}
+
 function _discoverGoBinary() {
     let suffix = '';
     if (os.platform() === 'win32') {
@@ -90,6 +100,14 @@ class MysqlBinlog extends EventEmitter {
                     break;
                 case 'log':
                     debugChannel(msg.message.trimEnd());
+                    break;
+                case 'error':
+                    console.log(msg);
+                    if (msg.binlogPosition) {
+                        this.emit('error', new ErrorWithBinLogPosition(msg.error, msg.binlogPosition));
+                    } else {
+                        this.emit('error', new Error(msg.error));
+                    }
                     break;
                 default:
                     debugChannel('received unexpected message on stdout: %o', msg);
