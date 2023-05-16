@@ -84,6 +84,11 @@ func (eh *canalEventHandler) OnRow(event *canal.RowsEvent) error {
 					return nil, NewErrorWithBinlogPosition("Received binlog event for enum, but could not find the corresponding string values", mysqlBinLogPosition)
 				}
 
+				if row[idx] == nil {
+					parsedRow[column.Name] = nil
+					continue
+				}
+
 				enumValue, ok := row[idx].(int64)
 				if !ok {
 					return nil, NewErrorWithBinlogPosition("Received binlog event for enum, but could not parse the value as int64", mysqlBinLogPosition)
@@ -98,6 +103,11 @@ func (eh *canalEventHandler) OnRow(event *canal.RowsEvent) error {
 			case schema.TYPE_SET:
 				if column.SetValues == nil {
 					return nil, NewErrorWithBinlogPosition("Received binlog event for set, but could not find the corresponding string values", mysqlBinLogPosition)
+				}
+
+				if row[idx] == nil {
+					parsedRow[column.Name] = nil
+					continue
 				}
 
 				setValue, ok := row[idx].(int64)
