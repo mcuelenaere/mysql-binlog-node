@@ -8,6 +8,7 @@ import (
 	"github.com/go-mysql-org/go-mysql/schema"
 	logger "github.com/siddontang/go-log/log"
 	"log"
+	"math/bits"
 )
 
 type MysqlBinlogPosition struct {
@@ -77,21 +78,45 @@ func (eh *canalEventHandler) OnRow(event *canal.RowsEvent) error {
 	parseRow := func(row []any) (map[string]any, error) {
 		parsedRow := make(map[string]any)
 		for idx, column := range event.Table.Columns {
-			if column.Type == schema.TYPE_ENUM || column.Type == schema.TYPE_SET {
+			switch column.Type {
+			case schema.TYPE_ENUM:
 				if column.EnumValues == nil {
-					return nil, NewErrorWithBinlogPosition("Received binlog event for enum or set, but could not find the corresponding string values", mysqlBinLogPosition)
+					return nil, NewErrorWithBinlogPosition("Received binlog event for enum, but could not find the corresponding string values", mysqlBinLogPosition)
 				}
 
 				enumValue, ok := row[idx].(int64)
 				if !ok {
-					return nil, NewErrorWithBinlogPosition("Received binlog event for enum or set, but could not parse the value as int64", mysqlBinLogPosition)
+					return nil, NewErrorWithBinlogPosition("Received binlog event for enum, but could not parse the value as int64", mysqlBinLogPosition)
 				}
 
-				if int(enumValue) >= len(column.EnumValues) {
-					return nil, NewErrorWithBinlogPosition("Received binlog event for enum or set, but the int value is out of range", mysqlBinLogPosition)
+				if int(enumValue) > len(column.EnumValues) {
+					return nil, NewErrorWithBinlogPosition("Received binlog event for enum, but the int value is out of range", mysqlBinLogPosition)
 				}
 
 				parsedRow[column.Name] = column.EnumValues[enumValue-1]
+				continue
+			case schema.TYPE_SET:
+				if column.SetValues == nil {
+					return nil, NewErrorWithBinlogPosition("Received binlog event for set, but could not find the corresponding string values", mysqlBinLogPosition)
+				}
+
+				setValue, ok := row[idx].(int64)
+				if !ok {
+					return nil, NewErrorWithBinlogPosition("Received binlog event for set, but could not parse the value as int64", mysqlBinLogPosition)
+				}
+
+				if setValue >= (1 << uint(len(column.SetValues))) {
+					return nil, NewErrorWithBinlogPosition("Received binlog event for set, but the int value is out of range", mysqlBinLogPosition)
+				}
+
+				setValues := make([]string, 0, bits.OnesCount(uint(setValue)))
+				for i := 0; i < len(column.SetValues); i++ {
+					if setValue&(1<<uint(i)) != 0 {
+						setValues = append(setValues, column.SetValues[i])
+					}
+				}
+
+				parsedRow[column.Name] = setValues
 				continue
 			}
 
