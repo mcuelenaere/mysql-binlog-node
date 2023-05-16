@@ -40,15 +40,15 @@ type canalEventHandler struct {
 	errors chan<- error
 }
 
-func (eh *canalEventHandler) OnRotate(_ *replication.RotateEvent) error {
+func (eh *canalEventHandler) OnRotate(_ *replication.EventHeader, _ *replication.RotateEvent) error {
 	return nil
 }
 
-func (eh *canalEventHandler) OnTableChanged(_ string, _ string) error {
+func (eh *canalEventHandler) OnTableChanged(_ *replication.EventHeader, _ string, _ string) error {
 	return nil
 }
 
-func (eh *canalEventHandler) OnDDL(_ mysql.Position, _ *replication.QueryEvent) error {
+func (eh *canalEventHandler) OnDDL(_ *replication.EventHeader, _ mysql.Position, _ *replication.QueryEvent) error {
 	return nil
 }
 
@@ -171,15 +171,15 @@ func (eh *canalEventHandler) OnRow(event *canal.RowsEvent) error {
 	return nil
 }
 
-func (eh *canalEventHandler) OnXID(_ mysql.Position) error {
+func (eh *canalEventHandler) OnXID(_ *replication.EventHeader, _ mysql.Position) error {
 	return nil
 }
 
-func (eh *canalEventHandler) OnGTID(_ mysql.GTIDSet) error {
+func (eh *canalEventHandler) OnGTID(_ *replication.EventHeader, _ mysql.GTIDSet) error {
 	return nil
 }
 
-func (eh *canalEventHandler) OnPosSynced(_ mysql.Position, _ mysql.GTIDSet, _ bool) error {
+func (eh *canalEventHandler) OnPosSynced(_ *replication.EventHeader, _ mysql.Position, _ mysql.GTIDSet, _ bool) error {
 	return nil
 }
 
