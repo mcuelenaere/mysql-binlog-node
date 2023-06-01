@@ -22,22 +22,30 @@ const combinations = [
     ['windows', 'arm64', 'win32-arm64'],
 ];
 
+let commands = [
+    'echo "Downloading go dependencies..."',
+    'go mod download',
+];
 for (const [goOs, goArch, nodePlatformArch] of combinations) {
-    console.log(`Building ${nodePlatformArch}...`);
-    let outputFile = path.join(__dirname, '..', 'prebuilds', nodePlatformArch);
+    let outputName = nodePlatformArch;
     if (nodePlatformArch.startsWith('win32')) {
-        outputFile += '.exe';
+        outputName += '.exe';
     }
 
-    run(
-        'go', ['build', '-ldflags' , '-s -w', '-o', outputFile, '.'], {
-            cwd: path.join(__dirname, '..', 'golang'),
-            env: {
-                ...process.env,
-                'GOOS': goOs,
-                'GOARCH': goArch,
-            },
-            stdio: 'inherit',
-        }
-    );
+    commands.push(`echo "Building ${nodePlatformArch}..."`);
+    commands.push(`env GOOS=${goOs} GOARCH=${goArch} go build -ldflags "-s -w" -o /build/${outputName} .`);
 }
+
+run(
+    'docker', [
+        'run', '--rm', '-t',
+        '-v', `${path.join(__dirname, '..', 'prebuilds')}:/build`,
+        '-v', `${path.join(__dirname, '..', 'golang')}:/go/src:ro`,
+        '-w', '/go/src',
+        'golang:latest',
+        '/bin/sh', '-c', commands.join(' && ')
+    ], {
+        cwd: path.join(__dirname, '..', 'golang'),
+        stdio: 'inherit',
+    }
+);
