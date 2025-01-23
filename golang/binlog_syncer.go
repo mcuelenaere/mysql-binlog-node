@@ -52,6 +52,10 @@ func (eh *canalEventHandler) OnDDL(_ *replication.EventHeader, _ mysql.Position,
 	return nil
 }
 
+func (eh *canalEventHandler) OnRowsQueryEvent(_ *replication.RowsQueryEvent) error {
+	return nil
+}
+
 type ErrorWithBinlogPosition struct {
 	message        string
 	BinlogPosition MysqlBinlogPosition
@@ -185,7 +189,7 @@ func (eh *canalEventHandler) OnXID(_ *replication.EventHeader, _ mysql.Position)
 	return nil
 }
 
-func (eh *canalEventHandler) OnGTID(_ *replication.EventHeader, _ mysql.GTIDSet) error {
+func (eh *canalEventHandler) OnGTID(_ *replication.EventHeader, _ mysql.BinlogGTIDEvent) error {
 	return nil
 }
 
