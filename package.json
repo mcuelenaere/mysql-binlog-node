@@ -13,10 +13,10 @@
     "description": "MySQL connector & binlog parser",
     "keywords": ["mysql", "binlog"],
     "dependencies": {
-        "debug": "^4"
+        "debug": "^4.4.0"
     },
     "devDependencies": {
-        "@types/debug": "^4",
+        "@types/debug": "^4.1.12",
         "@types/node": "^20.1.5",
         "typescript": "^5.0.4"
     },
