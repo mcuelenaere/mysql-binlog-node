@@ -1,5 +1,6 @@
 const { spawnSync } = require('child_process');
 const path = require('path');
+const fs = require('fs');
 
 function run(...args) {
     const { error, status } = spawnSync(...args);
@@ -8,6 +9,16 @@ function run(...args) {
     } else if (status !== 0) {
         throw new Error(`process exited with status code ${status}`);
     }
+}
+
+function discoverGoVersion() {
+    const goModPath = path.join(__dirname, '..', 'golang', 'go.mod');
+    const goMod = fs.readFileSync(goModPath, 'utf8');
+    const goVersionMatch = goMod.match(/^go\s+(\d+\.\d+)/m);
+    if (goVersionMatch === null) {
+        throw new Error('failed to discover Go version');
+    }
+    return goVersionMatch[1];
 }
 
 const combinations = [
@@ -36,13 +47,15 @@ for (const [goOs, goArch, nodePlatformArch] of combinations) {
     commands.push(`env GOOS=${goOs} GOARCH=${goArch} go build -ldflags "-s -w" -o /build/${outputName} .`);
 }
 
+const goVersion = discoverGoVersion();
+
 run(
     'docker', [
         'run', '--rm', '-t',
         '-v', `${path.join(__dirname, '..', 'prebuilds')}:/build`,
         '-v', `${path.join(__dirname, '..', 'golang')}:/go/src:ro`,
         '-w', '/go/src',
-        'golang:latest',
+        `golang:${goVersion}`,
         '/bin/sh', '-c', commands.join(' && ')
     ], {
         cwd: path.join(__dirname, '..', 'golang'),
