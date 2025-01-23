@@ -14,7 +14,7 @@ function run(...args) {
 function discoverGoVersion() {
     const goModPath = path.join(__dirname, '..', 'golang', 'go.mod');
     const goMod = fs.readFileSync(goModPath, 'utf8');
-    const goVersionMatch = goMod.match(/^go\s+(\d+\.\d+)/m);
+    const goVersionMatch = goMod.match(/^go\s+([\d\.]+)/m);
     if (goVersionMatch === null) {
         throw new Error('failed to discover Go version');
     }
