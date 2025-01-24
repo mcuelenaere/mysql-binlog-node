@@ -44,7 +44,7 @@ for (const [goOs, goArch, nodePlatformArch] of combinations) {
     }
 
     commands.push(`echo "Building ${nodePlatformArch}..."`);
-    commands.push(`env GOOS=${goOs} GOARCH=${goArch} go build -ldflags "-s -w" -o /build/${outputName} .`);
+    commands.push(`env CGO_ENABLED=0 GOOS=${goOs} GOARCH=${goArch} go build -ldflags "-s -w -extldflags '-static'" -o /build/${outputName} .`);
 }
 
 const goVersion = discoverGoVersion();
