@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { debug } from 'debug';
-import {ChildProcess, spawn} from 'child_process';
+import { ChildProcess, spawn } from 'child_process';
 import * as readline from 'readline';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -31,12 +31,12 @@ export interface BinlogEvent {
         schema: string;
         name: string;
     }
-    insert?: Record<string, any>;
+    insert?: Record<string, any>[];
     update?: {
         old: Record<string, any>;
         new: Record<string, any>;
-    };
-    delete?: Record<string, any>;
+    }[];
+    delete?: Record<string, any>[];
 }
 
 export class ErrorWithBinLogPosition extends Error {

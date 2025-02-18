@@ -1,4 +1,7 @@
 {
+    "name": "@solashi/go-mysql-binlog-node",
+    "version": "0.0.1",
+    "description": "A Node.js MySQL binlog listener based on go-mysql",
     "main": "dist/binding.js",
     "types": "dist/binding.d.ts",
     "scripts": {
@@ -8,10 +11,10 @@
         "build:golang": "node scripts/build_golang.js",
         "postinstall": "node scripts/postinstall.js"
     },
-    "name": "go-mysql-js",
-    "version": "0.3.4",
-    "description": "MySQL connector & binlog parser",
-    "keywords": ["mysql", "binlog"],
+    "keywords": [
+        "mysql",
+        "binlog"
+    ],
     "dependencies": {
         "debug": "^4.4.0"
     },
@@ -25,14 +28,14 @@
         "prebuilds/*",
         "scripts/postinstall.js"
     ],
-    "author": "Maurus Cuelenaere",
+    "author": "Pham Van Cong",
     "license": "MIT",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/mcuelenaere/mysql-binlog-node.git"
+        "url": "git+https://github.com/congpv93/mysql-binlog-node"
     },
     "bugs": {
-        "url": "https://github.com/mcuelenaere/mysql-binlog-node/issues"
+        "url": "https://github.com/congpv93/mysql-binlog-node"
     },
-    "homepage": "https://github.com/mcuelenaere/mysql-binlog-node"
+    "homepage": "https://github.com/congpv93/mysql-binlog-node"
 }

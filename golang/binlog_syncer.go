@@ -27,11 +27,11 @@ type MysqlBinlogTable struct {
 }
 
 type MysqlBinlogChangeEvent struct {
-	BinlogPosition MysqlBinlogPosition   `json:"binlogPosition"`
-	Table          MysqlBinlogTable      `json:"table"`
-	Insert         map[string]any        `json:"insert,omitempty"`
-	Update         *MysqlBinlogRowUpdate `json:"update,omitempty"`
-	Delete         map[string]any        `json:"delete,omitempty"`
+	BinlogPosition MysqlBinlogPosition    `json:"binlogPosition"`
+	Table          MysqlBinlogTable       `json:"table"`
+	Insert         []map[string]any       `json:"insert,omitempty"`
+	Update         []MysqlBinlogRowUpdate `json:"update,omitempty"`
+	Delete         []map[string]any       `json:"delete,omitempty"`
 }
 
 type canalEventHandler struct {
@@ -149,36 +149,59 @@ func (eh *canalEventHandler) OnRow(event *canal.RowsEvent) error {
 
 	switch event.Action {
 	case canal.InsertAction:
-		var err error
-		changeEvent.Insert, err = parseRow(event.Rows[0])
-		if err != nil {
-			eh.errors <- err
-			return nil
+		inserts := make([]map[string]any, 0, len(event.Rows))
+
+		for _, row := range event.Rows {
+			parsedRow, err := parseRow(row)
+			if err != nil {
+				eh.errors <- err
+				return nil
+			}
+			inserts = append(inserts, parsedRow)
 		}
+
+		changeEvent.Insert = inserts
 	case canal.UpdateAction:
-		oldRow, err := parseRow(event.Rows[0])
-		if err != nil {
-			eh.errors <- err
-			return nil
+		updates := make([]MysqlBinlogRowUpdate, 0, len(event.Rows)/2)
+
+		for i := 0; i < len(event.Rows); i += 2 {
+			oldRow, err := parseRow(event.Rows[i])
+			if err != nil {
+				eh.errors <- err
+				return nil
+			}
+
+			if i+1 >= len(event.Rows) {
+				eh.errors <- NewErrorWithBinlogPosition("Incomplete update pair in binlog event", mysqlBinLogPosition)
+				return nil
+			}
+
+			newRow, err := parseRow(event.Rows[i+1])
+			if err != nil {
+				eh.errors <- err
+				return nil
+			}
+
+			updates = append(updates, MysqlBinlogRowUpdate{
+				Old: oldRow,
+				New: newRow,
+			})
 		}
 
-		newRow, err := parseRow(event.Rows[1])
-		if err != nil {
-			eh.errors <- err
-			return nil
-		}
-
-		changeEvent.Update = &MysqlBinlogRowUpdate{
-			Old: oldRow,
-			New: newRow,
-		}
+		changeEvent.Update = updates
 	case canal.DeleteAction:
-		var err error
-		changeEvent.Delete, err = parseRow(event.Rows[0])
-		if err != nil {
-			eh.errors <- err
-			return nil
+		deletes := make([]map[string]any, 0, len(event.Rows))
+
+		for _, row := range event.Rows {
+			parsedRow, err := parseRow(row)
+			if err != nil {
+				eh.errors <- err
+				return nil
+			}
+			deletes = append(deletes, parsedRow)
 		}
+
+		changeEvent.Delete = deletes
 	}
 	eh.events <- changeEvent
 
