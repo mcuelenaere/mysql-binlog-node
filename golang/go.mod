@@ -1,6 +1,6 @@
 module mysql-binlog
 
-go 1.23.5
+go 1.24.1
 
 require (
 	github.com/go-mysql-org/go-mysql v1.11.0
