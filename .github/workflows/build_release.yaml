@@ -49,7 +49,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '>=22.21.0'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: build
       - run: npm ci
@@ -68,7 +68,7 @@ jobs:
           node-version: '>=22.21.0'
           registry-url: 'https://registry.npmjs.org'
       - run: npm ci --ignore-scripts
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: build
       - run: npm publish
