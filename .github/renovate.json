@@ -1,25 +1,31 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:base",
     "config:recommended",
-    "npm:unpublishSafe"
+    "config:recommended",
+    "security:minimumReleaseAgeNpm"
   ],
   "prHourlyLimit": 0,
   "prConcurrentLimit": 5,
   "rangeStrategy": "bump",
-  "labels": ["dependencies"],
+  "labels": [
+    "dependencies"
+  ],
   "packageRules": [
     {
       "description": "Automerge linters",
-      "extends": ["packages:linters"],
+      "extends": [
+        "packages:linters"
+      ],
       "automerge": true
     },
     {
       "description": "Automerge TS types",
-      "matchPackagePrefixes": ["@types/"],
       "automerge": true,
-      "rebaseWhen": "conflicted"
+      "rebaseWhen": "conflicted",
+      "matchPackageNames": [
+        "@types/{/,}**"
+      ]
     }
   ]
 }
