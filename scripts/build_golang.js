@@ -22,14 +22,14 @@ function discoverGoVersion() {
 }
 
 const combinations = [
-//    ['linux', '386', 'linux-ia32'], // 3rd-party library does not support 32-bit
+    ['linux', '386', 'linux-ia32'],
     ['linux', 'amd64', 'linux-x64'],
-//    ['linux', 'arm', 'linux-arm'], // 3rd-party library does not support 32-bit
+    ['linux', 'arm', 'linux-arm'],
     ['linux', 'arm64', 'linux-arm64'],
     ['darwin', 'amd64', 'darwin-x64'],
     ['darwin', 'arm64', 'darwin-arm64'],
     ['windows', 'amd64', 'win32-x64'],
-//    ['windows', '386', 'win32-ia32'], // 3rd-party library does not support 32-bit
+    ['windows', '386', 'win32-ia32'],
     ['windows', 'arm64', 'win32-arm64'],
 ];
 
