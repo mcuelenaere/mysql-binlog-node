@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { debug } from 'debug';
-import {ChildProcess, spawn} from 'child_process';
+import { ChildProcess, spawn } from 'child_process';
 import * as readline from 'readline';
 import * as fs from 'fs';
 import * as path from 'path';
