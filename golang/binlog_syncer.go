@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"log/slog"
+	"math/bits"
+
 	"github.com/go-mysql-org/go-mysql/canal"
 	"github.com/go-mysql-org/go-mysql/mysql"
 	"github.com/go-mysql-org/go-mysql/replication"
 	"github.com/go-mysql-org/go-mysql/schema"
-	logger "github.com/siddontang/go-log/log"
-	"log"
-	"math/bits"
 )
 
 type MysqlBinlogPosition struct {
@@ -202,16 +203,17 @@ func (eh *canalEventHandler) String() string {
 }
 
 type channelLogHandler struct {
-	c chan<- string
+	ch chan<- string
 }
 
 func (h *channelLogHandler) Write(b []byte) (n int, err error) {
-	h.c <- string(b)
+	h.ch <- string(b)
 	return len(b), nil
 }
 
-func (h *channelLogHandler) Close() error {
-	return nil
+func newChannelLogger(ch chan<- string, opts *slog.HandlerOptions) *slog.Logger {
+	handler := slog.NewTextHandler(&channelLogHandler{ch}, opts)
+	return slog.New(handler)
 }
 
 type MysqlBinlogSyncer struct {
@@ -232,7 +234,7 @@ func NewSyncer(config MysqlBinlogConfig) (*MysqlBinlogSyncer, error) {
 	canalCfg.IncludeTableRegex = config.TableRegexes
 	canalCfg.ParseTime = true
 	canalCfg.Dump = canal.DumpConfig{}
-	canalCfg.Logger = logger.New(&channelLogHandler{c: loggingEvents}, logger.Llevel|logger.Lfile)
+	canalCfg.Logger = newChannelLogger(loggingEvents, &slog.HandlerOptions{Level: slog.LevelInfo})
 
 	c, err := canal.NewCanal(canalCfg)
 	if err != nil {
