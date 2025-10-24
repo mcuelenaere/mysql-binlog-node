@@ -25,7 +25,7 @@ jobs:
           node-version: '>=22.21.0'
       - run: npm ci
       - run: npm run build
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: build
           path: |
@@ -53,7 +53,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '>=22.21.0'
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v6
         with:
           name: build
       - run: npm ci
@@ -72,7 +72,7 @@ jobs:
           node-version: '>=22.21.0'
           registry-url: 'https://registry.npmjs.org'
       - run: npm ci --ignore-scripts
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v6
         with:
           name: build
       - run: npm publish
