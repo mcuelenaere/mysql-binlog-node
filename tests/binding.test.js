@@ -16,6 +16,6 @@ describe('MysqlBinlog', () => {
             username: "root",
             password: "password",
             tableRegexes: ['Users'],
-        })).rejects.toThrow("dial tcp [::1]:3306: connect: connection refused");
+        })).rejects.toThrow(/dial tcp \[::1\]:3306: (connect|connectex).*refused/i);
     });
 });
