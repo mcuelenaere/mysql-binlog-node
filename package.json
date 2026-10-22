@@ -19,7 +19,7 @@
         "@types/debug": "^4.1.13",
         "@types/node": "^22.18.11",
         "jest": "^30.5.2",
-        "typescript": "^5.9.3"
+        "typescript": "^7.0.2"
     },
     "files": [
         "dist/*",
